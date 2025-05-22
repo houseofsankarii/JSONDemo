@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User Dashboard with Charts</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+    th { background-color: #f4f4f4; }
+    canvas { max-width: 600px; margin: 20px auto; display: block; }
+  </style>
+</head>
+<body>
+
+  <h1>User Dashboard (JSONPlaceholder)</h1>
+  <button onclick="loadUsers()">Load Users & Charts</button>
+
+  <table id="userTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Company</th>
+        <th>City</th>
+      </tr>
+    </thead>
+    <tbody id="userBody"></tbody>
+  </table>
+
+  <canvas id="cityChart"></canvas>
+  <canvas id="companyChart"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    function loadUsers() {
+      fetch('https://jsonplaceholder.typicode.com/users')
+        .then(response => response.json())
+        .then(users => {
+          const tbody = document.getElementById('userBody');
+          tbody.innerHTML = '';
+          const cityCount = {};
+          const companyCount = {};
+
+          users.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${user.name}</td>
+              <td>${user.email}</td>
+              <td>${user.company.name}</td>
+              <td>${user.address.city}</td>
+            `;
+            tbody.appendChild(row);
+
+            cityCount[user.address.city] = (cityCount[user.address.city] || 0) + 1;
+            companyCount[user.company.name] = (companyCount[user.company.name] || 0) + 1;
+          });
+
+          document.getElementById('userTable').style.display = 'table';
+
+          drawBarChart(cityCount);
+          drawDoughnutChart(companyCount);
+        })
+        .catch(error => {
+          alert('Failed to load user data.');
+          console.error(error);
+        });
+    }
+
+    function drawBarChart(dataObj) {
+      const ctx = document.getElementById('cityChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(dataObj),
+          datasets: [{
+            label: 'Users per City',
+            data: Object.values(dataObj),
+            backgroundColor: 'rgba(54, 162, 235, 0.6)'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Users by City' }
+          }
+        }
+      });
+    }
+
+    function drawDoughnutChart(dataObj) {
+      const ctx = document.getElementById('companyChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(dataObj),
+          datasets: [{
+            label: 'Users per Company',
+            data: Object.values(dataObj),
+            backgroundColor: [
+              '#FF6384', '#36A2EB', '#FFCE56', '#8E44AD',
+              '#2ECC71', '#E67E22', '#3498DB', '#E74C3C',
+              '#1ABC9C', '#F39C12'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: { display: true, text: 'Users by Company' }
+          }
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
